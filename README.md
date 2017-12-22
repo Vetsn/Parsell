@@ -6,3 +6,5 @@ While it is capable of constructing simulation programs, handling large 3D(4D) m
 
 This repository is dedicated to providing tools for facilitating 4D model-manipulation with A-cell.
 
+###### Notice
+While Parsell is under development and intended for personal use, comments & contributions are greatly welcome.
