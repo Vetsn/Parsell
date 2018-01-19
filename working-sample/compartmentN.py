@@ -20,14 +20,5 @@ for z in range(modelZ):
 				continue
 			count = count + 1
 
-
-print("TOTAL COMPARTMENT NUMBERRRRRRRRRR".center(40))
-print("*"*40)
-print(str(count).center(40))
-print("*"*40)
-
-
-
-
-
+print(str(count))
 
