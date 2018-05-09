@@ -48,27 +48,37 @@ class Model:
 	def printConcentration(self):
 		for symbol in range(len(self.presets)):
 			print("// " + str(self.names[symbol]) )
+			output = []	# buffer for speed
+			cache = {}	# cache of query: (symbol,xyz) => parameter
 			for z in range(self.dataZ):
 				for x in range(self.dataX):
 					for y in range(self.dataY):
-						if not( self.exists(x,y,z) ):
-							continue
-						print( str(self.queryParameter(symbol,self.model[z][x][y])) +" ",end="" )
-			print("")
+						if ( self.model[z][x][y]=="_" ): continue
+						key = ( symbol, self.model[z][x][y] )
+						if key not in cache:
+							cache[key] = str(self.queryParameter(symbol,self.model[z][x][y]))
+						output.append( cache[key] )
+			print(" ".join(output))
 
 	# return True  : compartment exists.
 	# return False : void. no compartment exists here.
 	def exists(self,x,y,z):
 		return (self.model[z][x][y] != "_")
-		pass
 
 	# returns the reaction groups that a compartment is associated with as a string of 0 & 1s
 	def reactionFlags(self,x,y,z):
-		if(  self.model[z][x][y] == "P"): return "100000000001111000"	# plasma membrane
-		elif(self.model[z][x][y] == "."): return "010000000100000000"	# cytosol
-		elif(self.model[z][x][y] == "X"): return "001011111110000111"	# disc membrane
-		elif(self.model[z][x][y] == "*"): return "001011111110000111"	# disc membrane w Luminopsin
-		else                            : return "000000000000000000"	#(default reaction flags)
+		if(  self.model[z][x][y] == "*"): return "11110100000010000"	# disk (illuminated)
+		elif(self.model[z][x][y] == "-"): return "11110100000010000"	# disk
+		elif(self.model[z][x][y] == "="): return "11110101100010000"	# disk | mob1
+		elif(self.model[z][x][y] == "|"): return "11111111001110011"	# dPDE | plas
+		elif(self.model[z][x][y] == "+"): return "11111111101110011"	# dPDE | mob1 | plas
+		elif(self.model[z][x][y] == "/"): return "00000100000000000"	# mob1
+		elif(self.model[z][x][y] == "\\"):return "00000100000000000"	# mob2
+		elif(self.model[z][x][y] == "X"): return "00000100000000000"	# mob1 | mob2
+		elif(self.model[z][x][y] == ":"): return "00000101101100011"	# mob1 | plas
+		elif(self.model[z][x][y] == "."): return "00000101011100011"	# mob2 | plas
+		elif(self.model[z][x][y] == "I"): return "00000101111100011"	# mob1 | mob2 | plas
+		else                            : return "00000000000000000"	# fallback
 
 	# returns initial concentration of 'symbol' in compartments of type 'cmpType'
 	def queryParameter(self,symbol,cmpType):
@@ -82,7 +92,6 @@ class Model:
 					if(cmpType.upper() in self.presets[symbol]): return self.presets[symbol][cmpType.upper()]
 					else                                       : return self.presets[symbol]['DEFAULT']
 		return 0.0
-
 
 
 
