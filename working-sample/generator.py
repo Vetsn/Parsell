@@ -4,30 +4,24 @@ from model import Model	# ./model.py
 
 # load model blueprint as Model
 model = Model()
-#model.show()	# just checkin'.
-
 modelX = model.dataX	# model diameter. should be odd
 modelY = model.dataY	# model diameter. should be odd
 modelZ = model.dataZ	# model height.
 
+output = []
 for z in range(modelZ):
+	cz = z-int(modelZ/2)
 	for x in range(modelX):
+		cx = x-int(modelX/2)
 		for y in range(modelY):
-			# is this coordinate valid? ask Model
+			# is this coordinate valid?
 			if not(model.exists(x,y,z)):
 				continue
-			# print info of compartment
-			print("{:4d} {:4d} {:4d}\t0 3f 0 0 0.0".format(x-int(modelX/2), y-int(modelY/2), z-int(modelZ/2)) )
+			# compartment parameters
+			output.append( "{} {} {} 0 3f 0 0 0.0".format(cx, y-int(modelY/2), cz) )
+			# associated reactions
+			output.append( model.reactionFlags(x,y,z) )
 
-			# print associated reactions
-			print(model.reactionFlags(x,y,z))
-
+print("\n".join(output))
 
 model.printConcentration()
-
-
-
-
-
-
-
