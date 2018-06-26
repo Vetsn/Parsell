@@ -148,7 +148,7 @@ class CalFile:
 		""" timecourse of symbol [s] in compartment at [x][y][z].
 			[s] must be a string.
 			[x][y][z] must be integers.
-			returns timecource as a list of floats.
+			returns timecourse as a list of floats.
 			upon error, raises error and aborts.
 		"""
 		# argument validation
