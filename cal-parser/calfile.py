@@ -10,7 +10,11 @@ class CalFile:
 	parseHeader()   initialize global variables. should be executed before other functions are called.
 	printInfo()     print basic info, such as number of compartments, time steps, etc.
 	getSequence(s,x,y,z)
-	                returns concentration of symbol [s] in compartment at [x][y][z].
+	                returns value of symbol [s] in compartment at [x][y][z].
+	getByID(s,cid)  returns value of symbol [s] in [cid]th compartment.
+	getSeqAverage(s,average=True)
+	                returns total value of symbol [s] throughout the model.
+	                setting [average] to true divides each value by the number of compartments.
 
 	==== variables ====
 	f               file handler
@@ -130,16 +134,16 @@ class CalFile:
 		recordSize = self.f.tell() - self.offsetResults
 		if( estimate > recordSize ):
 			x = recordSize / (8*self.cStatus[0]*len(self.symbolOut) + 4)
-			x = x-1		# because the first step is only the initial parameters
 			if(self.verbose):
-				print("actual file size is smaller than expected, found only {} steps (= {:.3f} s)".format(x, x*self.timeRecord))
+				print("actual file size is smaller than expected, found only {} timepoints (= {:.3f} s)".format(x, (x-1)*self.timeRecord))
 			self.timeN = int(x)
 
 	def printInfo(self):
 		print( "======== model summary ========")
 		print( "compartments: {}\nmembranes: {}".format(self.cStatus[0],self.cStatus[1]) )
 		print( "compartment size:\n    {}\n   *{}\n   *{} m".format(self.cStatus[2],self.cStatus[3],self.cStatus[4]) )
-		print( "time {}~{} s, output interval {} s ({} steps recorded)".format(self.timeStart,self.timeEnd,self.timeRecord,self.timeN) )
+		print( "expected time {}~{} s, output interval {} s".format(self.timeStart,self.timeEnd,self.timeRecord) )
+		print( "recorded time {}~{} s (= {} timepoints)".format(self.timeStart,self.timeRecord*(self.timeN-1),self.timeN) )
 		print( "recorded symbols:" )
 		for i in range(len(self.symbolOut)):
 			print( "\t[{}]\t{}".format(i,self.symbolOut[i]) )
@@ -167,6 +171,45 @@ class CalFile:
 			self.f.seek( index*self.cStatus[0]*8, 1 )
 			self.f.seek( cid*8, 1 )
 			result.append( unpack("<d", self.f.read(8))[0] )
+		return result
+
+	def getByID(self,s,cid):
+		""" timecourse of symbol [s] in compartment at [x][y][z].
+			[s] must be a string.
+			[cid] must be integer.
+			returns timecourse as a list of floats.
+			upon error, raises error and aborts.
+		"""
+		# argument validation
+		try:
+			assert s in self.symbolOut, "error in getSequence(): could not find symbol \"{}\"".format(s)
+			assert (0<=cid and cid<self.cStatus[0]), "error in getSequence(): no such compartment: {}.".format(cid)
+		except AssertionError as e:
+			raise
+
+		result = []
+		index = self.symbolOut.index(s)
+		for i in range(self.timeN):
+			self.f.seek( self.offsetResults + i * (len(self.symbolOut)*self.cStatus[0]*8+4) )
+			self.f.seek( 4,1 )
+			self.f.seek( index*self.cStatus[0]*8, 1 )
+			self.f.seek( cid*8, 1 )
+			result.append( unpack("<d", self.f.read(8))[0] )
+		return result
+
+	def getSeqAverage(self,s,average=True):
+		""" returns amount of symbol [s] as array.
+			[s] must be a string.
+			when [average] is True, each value is averaged per compartment.
+			beware of rownding errors.
+		"""
+		x = []
+		for i in range(self.cStatus[0]):
+			x.append( self.getByID(s,i) )
+		if(average):
+			result = [sum(unit)/self.cStatus[0] for unit in list(zip(*x))]
+		else:
+			result = [sum(unit) for unit in list(zip(*x))]
 		return result
 
 
